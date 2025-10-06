@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>マウス軌跡 - 弾ける泡</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="bubbleCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('bubbleCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let W = window.innerWidth;
+        let H = window.innerHeight;
+        canvas.width = W;
+        canvas.height = H;
+
+        const bubbles = []; // 泡を保存する配列
+
+        // マウスの動きを監視
+        window.addEventListener('mousemove', (e) => {
+            // マウスの位置に新しい泡を生成
+            // 一度に生成する泡の数を調整 (例: 1つか2つ)
+            for (let i = 0; i < 2; i++) { 
+                bubbles.push(new Bubble(e.clientX, e.clientY));
+            }
+        });
+
+        // ウィンドウサイズ変更時のキャンバスサイズ更新
+        window.addEventListener('resize', () => {
+            W = window.innerWidth;
+            H = window.innerHeight;
+            canvas.width = W;
+            canvas.height = H;
+        });
+
+        // --- Bubbleクラスの定義 ---
+        class Bubble {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                // 泡がランダムな方向に少し動くように設定
+                this.vx = (Math.random() - 0.5) * 0.5; // -0.25から0.25の範囲
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.radius = 0; // 初期半径は0で、徐々に膨らむ
+                this.maxRadius = Math.random() * 20 + 10; // 最大半径 (10-30の間)
+                this.alpha = 1; // 透明度
+                // カラフルな色または少し透明感のある色
+                this.color = `hsl(${Math.random() * 360}, 80%, 70%)`; 
+                this.growing = true; // 成長フェーズ
+            }
+
+            // 泡の更新
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.growing) {
+                    this.radius += 0.5; // 徐々に半径を大きく
+                    if (this.radius >= this.maxRadius) {
+                        this.growing = false; // 最大半径に達したら弾けるフェーズへ
+                    }
+                } else {
+                    this.alpha -= 0.02; // 徐々に透明に
+                    this.radius += 0.5; // 透明になりながらも少し膨らみ続ける
+                    // this.radius *= 1.02; // または、少し早く縮小したい場合はこちら
+                }
+            }
+
+            // 泡の描画
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                // 泡の縁を描画してリアルさを出す
+                ctx.strokeStyle = `rgba(255, 255, 255, ${this.alpha * 0.7})`; // 白い縁
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        // --- メインのアニメーションループ ---
+        function animate() {
+            // 背景を完全にクリア
+            ctx.clearRect(0, 0, W, H);
+            // または、残像効果が欲しい場合は、前回のコードのように少し透過させて描画
+            // ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; 
+            // ctx.fillRect(0, 0, W, H);
+            
+            for (let i = bubbles.length - 1; i >= 0; i--) {
+                const bubble = bubbles[i];
+                bubble.update();
+                bubble.draw();
+
+                // 完全に透明になったら配列から削除
+                if (bubble.alpha <= 0.01) {
+                    bubbles.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // アニメーション開始
+        animate();
+    </script>
+
+</body>
+</html>
